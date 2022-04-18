@@ -25,17 +25,17 @@ library(ggplot2)
 
 ## 1. Introduction
 
-In this report, we compare the performance of the kernel density estimation with other density estimators. To this end, our report consists of two main sections. In the first section, we run a one-shot experiment using kernel density estimation and its competitors, including average shifted histogram and penalized likelihood estimation, based specified data generating process. In the second part, we conduct a Monte Carlo simulation study for different sample sizes and observe how the estimation accuracy changes when we increase the sample size by reporting the corresponding integrated squared errors. 
+In this report, we compare the performance of kernel density estimation with other density estimators. To this end, our report consists of two main sections. In the first section, we run a one-shot experiment using kernel density estimation and its competitors, including average shifted histogram and penalized likelihood estimation, based on specified data sequences. In the second part, we conduct a Monte Carlo simulation study for different sample sizes and observe how estimation accuracy changes when we increase the sample size by reporting the corresponding integrated squared errors. 
 
 ## 2. Data Generating Processes and Preliminary Experiments
 
-In this section, we introduce the methodologies of the kernel density estimation and its competitors first. Next, we run one-shot experiments and construct density plots to compare the performances of density estimation methods, after data generating processes.
+In this section, we introduce the methodologies of kernel density estimation and its competitors first. Next, we run one-shot experiments and construct density plots to compare the estimation performance, after data generating processes.
 
 ### 2.1 Methodology
 
 **Kernel Density Estimation**
   
-The kernel density estimation (KDE) is a widely-used density estimator, which centres a smooth kernel function at each data point then summing to get a density estimate [@deng2011density]. 
+Kernel density estimation (KDE) is a widely-used density estimator, which centres a smooth kernel function at each data point then summing to get a density estimate [@deng2011density]. 
 
 Let $X_1, \cdots, X_n \sim^{iid} f$. The kernel estimator of $f$ is defined as 
 $$\hat{f}_{kde}(x) = \frac{1}{n}\sum\limits_{i=1}^{n}K_h(x - X_i)=\frac{1}{n}\sum\limits_{i=1}^{n}K\bigg(\frac{x-X_i}{h}\bigg) $$
