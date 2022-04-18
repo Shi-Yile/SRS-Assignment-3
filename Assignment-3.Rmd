@@ -1,8 +1,10 @@
 ---
 title: "Statistical Research Skills - Assignment 3"
 author: "Yile Shi"
-date: "2022/4/16"
-output: pdf_document
+date: "2022/4/18"
+output: 
+  pdf_document:
+    fig_caption: true
 ---
 
 ```{r setup, include=FALSE}
@@ -17,23 +19,60 @@ library(ash)
 library(ggplot2)
 ```
 
-## Overview
+## 1. Introduction
 
-## Data Generating Processes and Preliminary Experiments
+In this report, we compare the performance of the kernel density estimation with other density estimators. To this end, our report consists of two main sections. In the first section, we run a one-shot experiment using kernel density estimation and its competitors, including average shifted histogram and penalized likelihood estimation, based specified data generating process. In the second part, we conduct a Monte Carlo simulation study for different sample sizes and observe how the estimation accuracy changes when we increase the sample size by reporting the corresponding integrated squared errors. 
 
-\begin{itemize}
-  \item Kernel Density Estimation - KSE
-  \item Average Shifted Histogram - ASH
-  \item Penalized Likelihood Estimation - PLE
-\end{itemize}
+## 2. Data Generating Processes and Preliminary Experiments
+
+In this section, we introduce the methodologies of the kernel density estimation and its competitors first, before any data simulation or experiment. 
+
+### 2.1 Methodology
+
+**Kernel Density Estimation**
+  
+The kernel density estimation (KSE) is a widely-used density estimator. Comparing with histogram approaches, the kernel density estimation overcomes the discreteness of them by centring a smooth kernel function at each data point then summing to get a density estimate. 
+
+Let $X_1, \cdots, X_n \sim^{iid} f$. The kernel estimator of $f$ is defined as 
+$$\hat{f}_{kde}(x) = \frac{1}{n}\sum\limits_{i=1}^{n}K_h(x - X_i)=\frac{1}{n}\sum\limits_{i=1}^{n}K\bigg(\frac{x-X_i}{h}\bigg) $$
+where $K$ is the density kernel and $h$ is the bandwidth. 
+
+The kernel, $K$, is a symmetric, and usually positive function that integrates to one. Common kernel functions are uniform, triangle, Epanechnikov, quartic (biweight), tricube (triweight), Gaussian (normal), and cosine. 
+
+The bandwidth, $h$, is a smoothing parameter. Generally, large bandwidths produce very smooth estimates, while small values produce wiggly estimates. The bandwidth influences estimation accuracy much more than the kernel, so choosing a good bandwidth is critical to get a good estimate.
+
+Typically, we select the bandwidth of KDE and evaluate its performance by the integrated square error (ISE):
+$$ISE = \int\big[\hat{f}_{kde}(x) - f(x) \big]^2dx$$
+Lower value of ISE suggests better selection on the bandwidth and better performance of the estimator. However, this optimization problem can be difficult to solve as usually the true density function $f(x)$ is unknown. General consensus is that plug-in selectors and cross validation selectors are the most useful over a wide range of inputs.
+  
+**Average Shifted Histogram**
+
+The histogram is the oldest and least sophisticated method for density estimation. One of its simple enhancement is the average shifted histogram (ASH), which is smoother and avoids the sensitivity to the choice of origin. Specifically, the premise of this approach is to take $m$ histograms, $\hat{f}_1, \hat{f}_2, \cdots, \hat{f}_m$, of bin width $h$ with origins of $t_o = 0, \frac{h}{m}, \frac{2h}{m}, \cdots, \frac{(m-1)h}{m}$. Based on these, we simply define the naive ASH as:
+$$\hat{f}_{ash}(x) =  \frac{1}{m} \sum\limits_{i=1}^{m}\hat{f}_i(x)$$
+There are $k = 1, \cdots, m \cdot n$ bins across all histograms, each spanning $\big[k\frac{h}{m}, (k+1)\frac{h}{m}\big]$ with centre $(k+0.5)\frac{h}{m}$. The ASH can be somewhat more general by using all bins to estimate the density at each point, weighting bins closer to the data more highly. In this way, ASH is also considered as an improvement for the discreteness of the traditional histogram. The weighted ASH is defined as:
+$$\hat{f}_{ash}(x) =  \frac{1}{m} \sum\limits_{k=1}^{m \cdot n}\omega(l_k - x)\hat{c}_k(x)$$
+where $\omega$ is a weighting function, $l_k$ is the centre of bin $k$, and $\hat{c}_k(x)$ is the number of points in that bin.
+ 
+**Penalized Likelihood Estimation**
+
+Penalized likelihood estimation (PLE) is another advanced approach to estimate the density, which considered the density as a mixture of $m$ "basis" densities, compromising between estimation accuracy and model complexity. As mentioned, PLE generally approximates the density of $x$, $f(x)$, as a mixture of $m$ densities:
+$$\hat{f}_{pen}(x) = \sum\limits_{i=1}^{m}c_i\phi_i(x)$$
+where $\phi_i(x)$ is a "basis" density and $c_i$ is the corresponding weight picked to ensure that $\hat{f}_{pen}$ can integrate to $1$. The basis densities are weighted equally and differ only by a location parameter, $\mu_i$. Thus, we can obtain a simplified definition which has a similar format with the kernel approach:
+$$\hat{f}_{pen}(x) = \frac{1}{m}\sum\limits_{i=1}^{m}K\bigg(\frac{x-\mu_i}{h}\bigg) $$
+Note that the "basis" densities are no longer constrained to be centred on the data points inn PLE, compared with KDE.
+
+Determining the number and location of $\mu_i$ appropriately or not decides the performance of the penalized likelihood estimation. A general way is placing a large number of $\mu_i$ at equally spaced locations along the domain of the data and then minimizing a penalized likelihood to remove $\mu_i$ with little contribution to the overall quality.
+
+### 2.2 Data Generating Processes
+
 
 ```{r echo = FALSE}
 # set random seed
 set.seed(1)
 
 # data generating for one-shot experiments
-data_1 <- rnorm(n = 1000, mean = 5, sd = 3)              # Normal(5, 3^2)
-data_2 <- rbeta(n = 1000, shape1 = 1, shape2 = 10)       # Beta(1, 10)
+data_1 <- rnorm(n = 500, mean = 5, sd = 3)              # Normal(5, 3^2)
+data_2 <- rbeta(n = 500, shape1 = 1, shape2 = 10)       # Beta(1, 10)
 ```
 
 ```{r include = FALSE}
@@ -47,12 +86,11 @@ ple_1 <- ssden(~ data_1, domain = data.frame(data_1 = c(range(data_1)[1],
                                                         range(data_1)[2])))
 ```
 
-```{r echo = FALSE}
+```{r echo = FALSE, fig.cap = "Estimated densities for Normal(5, 9) with different estimators"}
 # visualize the accurate density and estimations
-x_1 <- seq(range(data_1)[1], range(data_1)[2], length = 1000)
+x_1 <- seq(range(data_1)[1], range(data_1)[2], length = 500)
 # histogram
-hist(data_1, freq = FALSE, main = "Density plot of Normal(5, 9)", 
-     xlab = "x", ylim = c(0, 0.15))
+hist(data_1, freq = FALSE, xlab = "x", ylim = c(0, 0.15))
 # accurate density
 lines(x_1, dnorm(x_1, mean = 5, sd = 3), lwd = 2, col = "orange")
 # Kernel Density Estimates
@@ -71,7 +109,7 @@ legend("topright", legend = c("Accurate density", "Kernel density estimation",
        bty = "n")
 ```
 
-## Monte Carlo Simulation Study
+## 3. Monte Carlo Simulation Study
 
 ```{r, include = FALSE}
 # data_1 ~ Normal(5, 9)
@@ -91,12 +129,15 @@ ise_norm <- function(n){
                   support = c(min(x), max(x)))
   # compute the corresponding squared errors
   se_kde <- function(x) (kde(x) - dnorm(x, 5, 3))^2
-  # compute the integrated se
+  # compute ISE
   ise_kde <- integrate(se_kde, lower = min(x), upper = max(x))$value
   
   # Average Shifted Histogram
+  # compute the ASH estimates
   ash <- ash1(bin1(x, ab = c(min(x), max(x)), nbin = 50))
+  # compute the corresponding squared errors
   se_ash <- splinefun(ash$x, (ash$y - dnorm(ash$x, 5, 3))^2)
+  # compute ISE 
   ise_ash <- integrate(se_ash, lower = min(x), upper = max(x))$value
   
   # Penalized Likelihood Estimation
@@ -104,7 +145,7 @@ ise_norm <- function(n){
   ple <- ssden(~x, domain = data.frame(x = c(min(x), max(x))))
   # compute the corresponding squared errors
   se_ple <- function(x) (dssden(ple, x) - dnorm(x, 5, 3))^2
-  # compute the integrated se
+  # compute ISE
   ise_ple <- integrate(se_ple, lower = min(x), upper = max(x))$value
   
   return(c(ise_kde, ise_ash, ise_ple))
@@ -208,7 +249,7 @@ plot <- ggplot(rep_ise, aes(x = size)) +
 
 plot
 ```
-```{r}
 
-```
+
+## References
 
